@@ -1,0 +1,92 @@
+{
+  "expo": {
+    "name": "Lovelly",
+    "slug": "lovelly",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#020617"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "scheme": "lovelly",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lovelly.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app needs access to your camera to take profile photos.",
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to select profile photos.",
+        "NSLocationWhenInUseUsageDescription": "This app needs access to your location to share it with your partner.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to your location to share it with your partner even when the app is in the background."
+      },
+      "associatedDomains": ["applinks:lovelly.app"]
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#020617"
+      },
+      "package": "com.lovelly.app",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "lovelly.app",
+              "pathPrefix": "/join"
+            },
+            {
+              "scheme": "lovelly",
+              "host": "join"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-asset",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you set your profile picture.",
+          "cameraPermission": "The app accesses your camera to let you take a profile picture."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "This app needs access to your location to share it with your partner."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#E8849A",
+          "sounds": [],
+          "mode": "production"
+        }
+      ],
+      "expo-maps"
+    ]
+  }
+}
