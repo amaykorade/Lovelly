@@ -88,7 +88,7 @@ async function writeWidgetData(data: WidgetData): Promise<void> {
         
         // Trigger widget update via broadcast
         if (WidgetUpdateBridge && WidgetUpdateBridge.updateWidget) {
-          WidgetUpdateBridge.updateWidget();
+          await WidgetUpdateBridge.updateWidget();
         }
       } catch (error) {
         // Only warn if not in Expo Go (where native modules are expected to be unavailable)

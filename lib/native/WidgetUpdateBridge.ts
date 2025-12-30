@@ -13,7 +13,9 @@
 import { NativeModules } from 'react-native';
 
 interface WidgetUpdateBridgeInterface {
-  sendWidgetUpdate(): Promise<boolean>;
+  updateWidget(): Promise<void>;
+  writeWidgetData(dataJson: string): Promise<void>;
+  clearWidgetData(): Promise<void>;
 }
 
 // Try to get the native module, but handle gracefully if not available
