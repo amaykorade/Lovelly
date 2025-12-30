@@ -37,7 +37,7 @@ class WidgetUpdateBridgeModule(reactContext: ReactApplicationContext)
     }
     
     @ReactMethod
-    fun updateWidget() {
+    fun updateWidget(promise: Promise) {
         try {
             val context: Context = reactApplicationContext
             val appWidgetManager = AppWidgetManager.getInstance(context)
@@ -51,15 +51,11 @@ class WidgetUpdateBridgeModule(reactContext: ReactApplicationContext)
             }
             context.sendBroadcast(updateIntent)
             Log.d("WidgetUpdateBridge", "Widget update broadcast sent")
+            promise.resolve(true)
         } catch (e: Exception) {
             Log.e("WidgetUpdateBridge", "Error updating widget", e)
+            promise.reject("UPDATE_ERROR", "Failed to update widget", e)
         }
-    }
-    
-    @ReactMethod
-    fun sendWidgetUpdate(promise: Promise) {
-        updateWidget()
-        promise.resolve(true)
     }
 }
 

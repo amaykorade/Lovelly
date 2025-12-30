@@ -24,7 +24,9 @@
         "NSLocationWhenInUseUsageDescription": "This app needs access to your location to share it with your partner.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to your location to share it with your partner even when the app is in the background."
       },
-      "associatedDomains": ["applinks:lovelly.app"]
+      "associatedDomains": [
+        "applinks:lovelly.app"
+      ]
     },
     "android": {
       "adaptiveIcon": {
@@ -33,11 +35,12 @@
       },
       "package": "com.lovelly.app",
       "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.RECORD_AUDIO"
       ],
       "intentFilters": [
         {
@@ -54,7 +57,10 @@
               "host": "join"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -87,6 +93,11 @@
         }
       ],
       "expo-maps"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "fbeafb56-bb0b-45f7-831c-e934798e40e3"
+      }
+    }
   }
 }

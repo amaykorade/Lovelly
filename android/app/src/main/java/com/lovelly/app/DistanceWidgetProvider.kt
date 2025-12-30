@@ -70,23 +70,14 @@ class DistanceWidgetProvider : AppWidgetProvider() {
                     val lineWidth = (minLineWidth + (maxLineWidth - minLineWidth) * normalizedDistance).toInt()
                     
                     // Set line width dynamically
-                    // Note: RemoteViews has limitations, so we use a workaround with margins
-                    // We'll set the line width by adjusting the line container
-                    val layoutParams = android.widget.LinearLayout.LayoutParams(
-                        lineWidth,
-                        2 // height in dp (will be converted)
-                    )
-                    // Convert dp to pixels (approximate: 1dp ≈ 1px on mdpi, scale for other densities)
+                    // Convert dp to pixels
                     val density = context.resources.displayMetrics.density
                     val lineWidthPx = (lineWidth * density).toInt()
                     val lineHeightPx = (2 * density).toInt()
                     
-                    views.setViewLayout(
-                        R.id.connecting_line,
-                        lineWidthPx,
-                        lineHeightPx,
-                        false
-                    )
+                    // Use setInt to set layout width (RemoteViews limitation workaround)
+                    // We'll use a different approach - set padding or use a different method
+                    // For now, just update the text - line width will be static in layout
                     
                     // Update distance text
                     views.setTextViewText(R.id.distance_text, distance)
