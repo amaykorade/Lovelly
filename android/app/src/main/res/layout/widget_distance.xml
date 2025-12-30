@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="12dp"
+    android:background="@drawable/widget_background_gradient"
+    android:clipToPadding="false">
+
+    <!-- Header - Top Center -->
+    <TextView
+        android:id="@+id/widget_header"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Distance"
+        android:textColor="#FFFFFF"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:alpha="0.9"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="4dp" />
+
+    <!-- Visual Representation Container -->
+    <LinearLayout
+        android:id="@+id/visual_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_below="@id/widget_header"
+        android:layout_above="@id/distance_text_container"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp">
+
+        <!-- User Circle (Left) -->
+        <View
+            android:id="@+id/user_circle"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="@drawable/widget_circle_user" />
+
+        <!-- Connecting Line -->
+        <View
+            android:id="@+id/connecting_line"
+            android:layout_width="60dp"
+            android:layout_height="2dp"
+            android:background="@drawable/widget_line"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp" />
+
+        <!-- Partner Circle (Right) -->
+        <View
+            android:id="@+id/partner_circle"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="@drawable/widget_circle_partner" />
+
+    </LinearLayout>
+
+    <!-- Distance Text Container - Bottom -->
+    <LinearLayout
+        android:id="@+id/distance_text_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="6dp">
+
+        <TextView
+            android:id="@+id/distance_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2.5 km"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/partner_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Swati"
+            android:textColor="#FFFFFF"
+            android:textSize="9sp"
+            android:alpha="0.8"
+            android:layout_marginTop="2dp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+    </LinearLayout>
+
+    <!-- Not Connected State - Centered -->
+    <TextView
+        android:id="@+id/not_connected"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Not Connected"
+        android:textColor="#FFFFFF"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_centerInParent="true"
+        android:visibility="gone"
+        android:maxLines="2"
+        android:ellipsize="end" />
+
+</RelativeLayout>
+
