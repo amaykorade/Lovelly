@@ -131,10 +131,16 @@ async function triggerWidgetUpdate(data: WidgetData): Promise<void> {
     } else {
       // Android: Send broadcast intent (handled by native bridge)
       try {
-        const { WidgetUpdateBridge } = require('./native/WidgetUpdateBridge');
-        await WidgetUpdateBridge.sendWidgetUpdate();
+        const { NativeModules } = require('react-native');
+        const WidgetUpdateBridge = NativeModules.WidgetUpdateBridge;
+        if (WidgetUpdateBridge && WidgetUpdateBridge.updateWidget) {
+          await WidgetUpdateBridge.updateWidget();
+        }
       } catch (error) {
-        console.warn('WidgetUpdateBridge not available:', error);
+        if (!isExpoGo && !hasWarnedAboutNativeModule) {
+          console.warn('WidgetUpdateBridge.updateWidget not available:', error);
+          hasWarnedAboutNativeModule = true;
+        }
       }
     }
   } catch (error) {
