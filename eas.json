@@ -14,14 +14,22 @@
       }
     },
     "preview": {
+      "developmentClient": false,
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "ios": {
+        "simulator": false
       }
     },
     "production": {
+      "developmentClient": false,
       "android": {
         "buildType": "apk"
+      },
+      "ios": {
+        "simulator": false
       }
     }
   },
