@@ -333,58 +333,72 @@ export function PairingScreen({ navigation, route }: Props) {
       return;
     }
 
-    // Check if user already has a coupleId - verify couple document exists and has partner
-    if (coupleId && coupleId !== trimmed) {
-      try {
-        const existingCoupleRef = doc(db, "couples", coupleId);
-        const existingCoupleSnap = await getDoc(existingCoupleRef);
-        
-        if (existingCoupleSnap.exists()) {
-          const coupleData = existingCoupleSnap.data();
-          const partnerId = coupleData.ownerId === user.uid 
-            ? coupleData.partnerId 
-            : coupleData.ownerId;
-          
-          if (partnerId) {
-            Alert.alert(
-              "Already paired",
-              "You're already connected with a partner. If you want to join a different couple, please disconnect first.",
-              [{ text: "OK" }]
-            );
-            return;
-          } else {
-            // Couple exists but no partner - allow reconnecting
-            console.log("Couple exists but no partner, allowing reconnect");
-          }
-        } else {
-          // Couple document doesn't exist - clear invalid coupleId
-          console.log("Couple document doesn't exist, clearing invalid coupleId");
-          const userRef = doc(db, "users", user.uid);
-          await updateDoc(userRef, {
-            coupleId: null,
-            updatedAt: serverTimestamp(),
-          });
-          setCoupleId(null);
-        }
-      } catch (error) {
-        console.error("Error checking existing couple:", error);
-        // Continue with join process if check fails
-      }
-    }
-
-    // If already paired with this code, just show success
-    if (coupleId === trimmed) {
-      Alert.alert("Already connected", "You're already connected with this partner!");
-      setJoinCode("");
-      return;
-    }
+    // Set joining state early
+    setJoining(true);
 
     try {
-      setJoining(true);
+      // Check if user already has a coupleId - verify couple document exists and has partner
+      if (coupleId && coupleId !== trimmed) {
+        try {
+          const existingCoupleRef = doc(db, "couples", coupleId);
+          const existingCoupleSnap = await getDoc(existingCoupleRef);
+          
+          if (existingCoupleSnap.exists()) {
+            const coupleData = existingCoupleSnap.data();
+            const partnerId = coupleData.ownerId === user.uid 
+              ? coupleData.partnerId 
+              : coupleData.ownerId;
+            
+            if (partnerId) {
+              Alert.alert(
+                "Already paired",
+                "You're already connected with a partner. If you want to join a different couple, please disconnect first.",
+                [{ text: "OK" }]
+              );
+              setJoining(false);
+              return;
+            } else {
+              // Couple exists but no partner - allow reconnecting
+              console.log("Couple exists but no partner, allowing reconnect");
+            }
+          } else {
+            // Couple document doesn't exist - clear invalid coupleId
+            console.log("Couple document doesn't exist, clearing invalid coupleId");
+            const userRef = doc(db, "users", user.uid);
+            await updateDoc(userRef, {
+              coupleId: null,
+              updatedAt: serverTimestamp(),
+            });
+            setCoupleId(null);
+          }
+        } catch (error) {
+          console.error("Error checking existing couple:", error);
+          // Continue with join process if check fails
+        }
+      }
+
+      // If already paired with this code, just show success
+      if (coupleId === trimmed) {
+        Alert.alert("Already connected", "You're already connected with this partner!");
+        setJoinCode("");
+        setJoining(false);
+        return;
+      }
+
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Connection timeout. Please check your internet connection and try again.")), 15000);
+      });
+
       const coupleRef = doc(db, "couples", trimmed);
-      const snap = await getDoc(coupleRef);
+      const snap = await Promise.race([
+        getDoc(coupleRef),
+        timeoutPromise
+      ]) as any;
+
       if (!snap.exists()) {
-        Alert.alert("Invalid code", "We couldn’t find a couple with that code. Check with your partner.");
+        Alert.alert("Invalid code", "We couldn't find a couple with that code. Check with your partner.");
+        setJoining(false);
         return;
       }
 
@@ -392,6 +406,7 @@ export function PairingScreen({ navigation, route }: Props) {
       if (data.ownerId === user.uid) {
         Alert.alert("This is your code", "Share this code with your partner instead of joining it.");
         setJoinCode(""); // Clear the input
+        setJoining(false);
         return;
       }
 
@@ -399,29 +414,41 @@ export function PairingScreen({ navigation, route }: Props) {
       if (data.partnerId && data.partnerId !== user.uid) {
         Alert.alert("Code already used", "This code has already been used by another partner. Please ask your partner to generate a new code.");
         setJoinCode(""); // Clear the input
+        setJoining(false);
         return;
       }
 
       // Attach this user as partner
-      await updateDoc(coupleRef, {
-        partnerId: user.uid,
-        updatedAt: serverTimestamp(),
-      });
+      await Promise.race([
+        updateDoc(coupleRef, {
+          partnerId: user.uid,
+          updatedAt: serverTimestamp(),
+        }),
+        timeoutPromise
+      ]);
 
       // Update current user
       const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, {
-        coupleId: trimmed,
-        updatedAt: serverTimestamp(),
-      });
+      await Promise.race([
+        updateDoc(userRef, {
+          coupleId: trimmed,
+          updatedAt: serverTimestamp(),
+        }),
+        timeoutPromise
+      ]);
 
       // Ensure owner also has coupleId set (idempotent)
       if (data.ownerId) {
         const ownerRef = doc(db, "users", data.ownerId);
-        await updateDoc(ownerRef, {
-          coupleId: trimmed,
-          updatedAt: serverTimestamp(),
-        }).catch(() => {});
+        await Promise.race([
+          updateDoc(ownerRef, {
+            coupleId: trimmed,
+            updatedAt: serverTimestamp(),
+          }),
+          timeoutPromise
+        ]).catch(() => {
+          // Ignore errors for owner update - not critical
+        });
       }
 
       // Update local state
@@ -439,8 +466,9 @@ export function PairingScreen({ navigation, route }: Props) {
         },
       ]);
     } catch (error: any) {
-      console.error(error);
-      Alert.alert("Error", error.message || "Could not join with this code.");
+      console.error("Join error:", error);
+      const errorMessage = error.message || "Could not join with this code. Please check your internet connection and try again.";
+      Alert.alert("Connection Error", errorMessage);
     } finally {
       setJoining(false);
     }
@@ -670,7 +698,7 @@ export function PairingScreen({ navigation, route }: Props) {
           <Pressable
             className="rounded-2xl py-4 items-center"
             style={{
-              backgroundColor: (joining || !joinCode.trim()) ? colors.primary.dustyPink : colors.primary.softRose,
+              backgroundColor: (joining || !joinCode.trim()) ? colors.dustyPink : colors.primary.softRose,
               shadowColor: colors.primary.softRose,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: (joining || !joinCode.trim()) ? 0 : 0.3,
@@ -711,7 +739,7 @@ export function PairingScreen({ navigation, route }: Props) {
         </Text>
 
         <View className="rounded-2xl p-6 border items-center" style={{
-          backgroundColor: colors.primary.dustyPink,
+          backgroundColor: colors.dustyPink,
           borderColor: colors.primary.softRose,
           borderWidth: 2,
         }}>
@@ -837,12 +865,12 @@ export function PairingScreen({ navigation, route }: Props) {
     <KeyboardAvoidingView
       className="flex-1"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ backgroundColor: colors.primary.warmWhite }}
+      style={{ backgroundColor: colors.warmWhite }}
     >
       <ScrollView
         ref={scrollViewRef}
         className="flex-1"
-        style={{ backgroundColor: colors.primary.warmWhite }}
+        style={{ backgroundColor: colors.warmWhite }}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
         showsVerticalScrollIndicator={true}
