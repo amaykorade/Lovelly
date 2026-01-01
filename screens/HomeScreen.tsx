@@ -798,7 +798,7 @@ const HomeScreen = React.memo(function HomeScreen({ navigation }: Props) {
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
             <ActivityIndicator size="large" color={colors.primary.softRose} />
             <Text style={{ marginTop: hp(spacing.sm), fontSize: fontSize(typography.sizes.small), color: colors.status.offline }}>Loading your home…</Text>
-            </View>
+          </View>
         ) : (
           <>
             {/* Map Section - 70% of screen height */}
@@ -822,17 +822,17 @@ const HomeScreen = React.memo(function HomeScreen({ navigation }: Props) {
                     backgroundColor: colors.background.main,
                   }}>
                     <ActivityIndicator size="large" color={colors.primary.rose} />
-            <Text
-              style={{
+                        <Text
+                      style={{
                         marginTop: hp(spacing.sm),
                         fontSize: fontSize(typography.sizes.small),
                         color: colors.text.secondary,
               }}
             >
                       Loading map...
-            </Text>
-          </View>
-                ) : (
+                    </Text>
+              </View>
+            ) : (
                   <View style={{ flex: 1, position: 'relative' }}>
                     <WebView
                       key={`map-${Math.round((myLocation?.latitude || 0) * 1000)}-${Math.round((myLocation?.longitude || 0) * 1000)}-${Math.round((partnerLocation?.latitude || 0) * 1000)}-${Math.round((partnerLocation?.longitude || 0) * 1000)}`}
@@ -864,7 +864,7 @@ const HomeScreen = React.memo(function HomeScreen({ navigation }: Props) {
                     />
                     {/* Location Permission Button - Only show when permission is not granted */}
                     {locationPermissionGranted === false && (
-          <Pressable
+                <Pressable
                         style={({ pressed }) => [
                           {
                             position: 'absolute',
@@ -877,8 +877,8 @@ const HomeScreen = React.memo(function HomeScreen({ navigation }: Props) {
                             alignItems: 'center',
                             justifyContent: 'center',
                             shadowColor: '#000',
-                            shadowOffset: { width: 0, height: 4 },
-                            shadowOpacity: 0.3,
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
                             shadowRadius: 8,
                             elevation: 8,
                           },
@@ -895,11 +895,11 @@ const HomeScreen = React.memo(function HomeScreen({ navigation }: Props) {
                           size={fontSize(28)} 
                           color="#FFFFFF" 
                         />
-          </Pressable>
+                </Pressable>
                     )}
-        </View>
-                )}
-          </View>
+                      </View>
+                    )}
+                  </View>
             );
           })()}
 
@@ -909,8 +909,8 @@ const HomeScreen = React.memo(function HomeScreen({ navigation }: Props) {
             const remainingHeight = screenHeight * 0.3; // 30% of screen for content below map
             
             return (
-              <View 
-                style={{ 
+                      <View
+                    style={{
                   width: '100%',
                   height: remainingHeight,
                   paddingHorizontal: wp(spacing.lg),
@@ -946,11 +946,11 @@ const HomeScreen = React.memo(function HomeScreen({ navigation }: Props) {
                       color: colors.text.primary,
                     }}>
                       {partner.name}
-                    </Text>
+                  </Text>
                   </View>
                 ) : (
                   // Not Connected - Invite Partner button in box
-                  <Pressable
+                <Pressable
                     style={({ pressed }) => [
                       {
                         width: '100%',
@@ -962,10 +962,10 @@ const HomeScreen = React.memo(function HomeScreen({ navigation }: Props) {
                         backgroundColor: colors.background.surface,
                         alignItems: 'center',
                         justifyContent: 'center',
-                        shadowColor: "#000",
+                    shadowColor: "#000",
                         shadowOffset: { width: 0, height: 2 },
                         shadowOpacity: 0.1,
-                        shadowRadius: 4,
+                    shadowRadius: 4,
                         elevation: 2,
                       },
                       pressed && { opacity: 0.8 }
@@ -973,18 +973,18 @@ const HomeScreen = React.memo(function HomeScreen({ navigation }: Props) {
                     onPress={handleNavigateToPairing}
                     android_ripple={{ color: 'rgba(233, 30, 99, 0.1)' }}
                   >
-                    <Text
-                      style={{
+                  <Text
+                    style={{
                         fontSize: fontSize(typography.sizes.body),
-                        fontWeight: typography.weights.semibold,
+                      fontWeight: typography.weights.semibold,
                         color: colors.primary.rose,
                         letterSpacing: 0.3,
                         textAlign: 'center',
-                      }}
-                    >
+                    }}
+                  >
                       Invite Partner
-                    </Text>
-                  </Pressable>
+                  </Text>
+                </Pressable>
                 )}
               </View>
             );
