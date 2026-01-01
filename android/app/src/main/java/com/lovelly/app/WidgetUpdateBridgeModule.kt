@@ -44,13 +44,18 @@ class WidgetUpdateBridgeModule(reactContext: ReactApplicationContext)
             val componentName = ComponentName(context, DistanceWidgetProvider::class.java)
             val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
 
-            // Request an update for all instances of the widget
+            // Request an update for all instances of the widget using standard action
             val updateIntent = Intent(context, DistanceWidgetProvider::class.java).apply {
                 action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
                 putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
             }
             context.sendBroadcast(updateIntent)
-            Log.d("WidgetUpdateBridge", "Widget update broadcast sent")
+            
+            // Also send custom action for onReceive handler
+            val customIntent = Intent("com.lovelly.app.WIDGET_UPDATE")
+            context.sendBroadcast(customIntent)
+            
+            Log.d("WidgetUpdateBridge", "Widget update broadcast sent for ${appWidgetIds.size} widgets")
             promise.resolve(true)
         } catch (e: Exception) {
             Log.e("WidgetUpdateBridge", "Error updating widget", e)

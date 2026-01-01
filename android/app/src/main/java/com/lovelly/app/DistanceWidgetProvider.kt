@@ -48,6 +48,10 @@ class DistanceWidgetProvider : AppWidgetProvider() {
         
         val views = RemoteViews(context.packageName, R.layout.widget_distance)
         
+        // Always show the visual representation (two circles and line)
+        // This is the core design - always visible
+        views.setViewVisibility(R.id.visual_container, android.view.View.VISIBLE)
+        
         // Always show the widget, even if no data exists
         try {
             if (widgetDataJson != null && widgetDataJson.isNotEmpty()) {
@@ -59,49 +63,40 @@ class DistanceWidgetProvider : AppWidgetProvider() {
                 val isConnected = data.optBoolean("isConnected", false)
                 
                 if (isConnected && distanceKm > 0) {
-                    // Calculate visual distance (line width) based on actual distance
-                    // Max distance for scaling: 50km (adjust as needed)
-                    val maxDistanceKm = 50.0
-                    val minLineWidth = 20 // Minimum line width in dp (very close)
-                    val maxLineWidth = 100 // Maximum line width in dp (far apart)
-                    
-                    // Calculate line width: closer = shorter line, farther = longer line
-                    // Invert: closer distance = shorter line
-                    val normalizedDistance = (distanceKm / maxDistanceKm).coerceIn(0.0, 1.0)
-                    val lineWidth = (minLineWidth + (maxLineWidth - minLineWidth) * normalizedDistance).toInt()
-                    
-                    // Update distance text
+                    // Connected and has distance - show distance and partner name
                     views.setTextViewText(R.id.distance_text, distance)
                     views.setTextViewText(R.id.partner_name, partnerName)
                     
-                    // Show visual representation
-                    views.setViewVisibility(R.id.visual_container, android.view.View.VISIBLE)
+                    // Show distance text container, hide not connected
                     views.setViewVisibility(R.id.distance_text_container, android.view.View.VISIBLE)
                     views.setViewVisibility(R.id.not_connected, android.view.View.GONE)
                 } else {
-                    // Not connected or no distance data - show not connected state
-                    views.setViewVisibility(R.id.visual_container, android.view.View.GONE)
+                    // Not connected - show "Not Connected" text, hide distance
+                    views.setTextViewText(R.id.not_connected, "Not Connected")
                     views.setViewVisibility(R.id.distance_text_container, android.view.View.GONE)
                     views.setViewVisibility(R.id.not_connected, android.view.View.VISIBLE)
-                    views.setTextViewText(R.id.not_connected, "Not Connected")
                 }
             } else {
-                // No data available - show not connected state
-                views.setViewVisibility(R.id.visual_container, android.view.View.GONE)
+                // No data available - show not connected state but keep visual representation
+                views.setTextViewText(R.id.not_connected, "Not Connected")
                 views.setViewVisibility(R.id.distance_text_container, android.view.View.GONE)
                 views.setViewVisibility(R.id.not_connected, android.view.View.VISIBLE)
-                views.setTextViewText(R.id.not_connected, "Not Connected")
             }
         } catch (e: Exception) {
             Log.e("DistanceWidget", "Error parsing widget data", e)
-            // On error, show not connected state
-            views.setViewVisibility(R.id.visual_container, android.view.View.GONE)
+            e.printStackTrace()
+            // On error, show not connected state but keep visual representation
+            views.setTextViewText(R.id.not_connected, "Not Connected")
             views.setViewVisibility(R.id.distance_text_container, android.view.View.GONE)
             views.setViewVisibility(R.id.not_connected, android.view.View.VISIBLE)
-            views.setTextViewText(R.id.not_connected, "Not Connected")
         }
         
-        appWidgetManager.updateAppWidget(appWidgetId, views)
+        try {
+            appWidgetManager.updateAppWidget(appWidgetId, views)
+        } catch (e: Exception) {
+            Log.e("DistanceWidget", "Error updating widget", e)
+            e.printStackTrace()
+        }
     }
 }
 
