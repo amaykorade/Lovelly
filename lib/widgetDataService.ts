@@ -41,7 +41,7 @@ const UPDATE_THROTTLE_MS = 30000; // Update every 30 seconds
 /**
  * Write widget data to shared storage
  */
-async function writeWidgetData(data: WidgetData): Promise<void> {
+export async function writeWidgetData(data: WidgetData): Promise<void> {
   try {
     if (Platform.OS === 'ios') {
       // iOS: Write to App Group using native module

@@ -48,16 +48,17 @@ class DistanceWidgetProvider : AppWidgetProvider() {
         
         val views = RemoteViews(context.packageName, R.layout.widget_distance)
         
-        if (widgetDataJson != null) {
-            try {
+        // Always show the widget, even if no data exists
+        try {
+            if (widgetDataJson != null && widgetDataJson.isNotEmpty()) {
                 val data = JSONObject(widgetDataJson)
-                val distanceKm = data.getDouble("distance") // Get actual distance in km
-                val distance = data.getString("formatted")
+                val distanceKm = data.optDouble("distance", 0.0) // Get actual distance in km, default to 0
+                val distance = data.optString("formatted", "Not available")
                 val direction = data.optString("direction", null)
-                val partnerName = data.getString("partnerName")
-                val isConnected = data.getBoolean("isConnected")
+                val partnerName = data.optString("partnerName", "Partner")
+                val isConnected = data.optBoolean("isConnected", false)
                 
-                if (isConnected) {
+                if (isConnected && distanceKm > 0) {
                     // Calculate visual distance (line width) based on actual distance
                     // Max distance for scaling: 50km (adjust as needed)
                     val maxDistanceKm = 50.0
@@ -69,16 +70,6 @@ class DistanceWidgetProvider : AppWidgetProvider() {
                     val normalizedDistance = (distanceKm / maxDistanceKm).coerceIn(0.0, 1.0)
                     val lineWidth = (minLineWidth + (maxLineWidth - minLineWidth) * normalizedDistance).toInt()
                     
-                    // Set line width dynamically
-                    // Convert dp to pixels
-                    val density = context.resources.displayMetrics.density
-                    val lineWidthPx = (lineWidth * density).toInt()
-                    val lineHeightPx = (2 * density).toInt()
-                    
-                    // Use setInt to set layout width (RemoteViews limitation workaround)
-                    // We'll use a different approach - set padding or use a different method
-                    // For now, just update the text - line width will be static in layout
-                    
                     // Update distance text
                     views.setTextViewText(R.id.distance_text, distance)
                     views.setTextViewText(R.id.partner_name, partnerName)
@@ -88,17 +79,26 @@ class DistanceWidgetProvider : AppWidgetProvider() {
                     views.setViewVisibility(R.id.distance_text_container, android.view.View.VISIBLE)
                     views.setViewVisibility(R.id.not_connected, android.view.View.GONE)
                 } else {
-                    // Hide visual representation, show not connected
+                    // Not connected or no distance data - show not connected state
                     views.setViewVisibility(R.id.visual_container, android.view.View.GONE)
                     views.setViewVisibility(R.id.distance_text_container, android.view.View.GONE)
                     views.setViewVisibility(R.id.not_connected, android.view.View.VISIBLE)
+                    views.setTextViewText(R.id.not_connected, "Not Connected")
                 }
-            } catch (e: Exception) {
-                Log.e("DistanceWidget", "Error parsing widget data", e)
-                views.setTextViewText(R.id.distance_text, "Error")
+            } else {
+                // No data available - show not connected state
+                views.setViewVisibility(R.id.visual_container, android.view.View.GONE)
+                views.setViewVisibility(R.id.distance_text_container, android.view.View.GONE)
+                views.setViewVisibility(R.id.not_connected, android.view.View.VISIBLE)
+                views.setTextViewText(R.id.not_connected, "Not Connected")
             }
-        } else {
-            views.setTextViewText(R.id.distance_text, "Not available")
+        } catch (e: Exception) {
+            Log.e("DistanceWidget", "Error parsing widget data", e)
+            // On error, show not connected state
+            views.setViewVisibility(R.id.visual_container, android.view.View.GONE)
+            views.setViewVisibility(R.id.distance_text_container, android.view.View.GONE)
+            views.setViewVisibility(R.id.not_connected, android.view.View.VISIBLE)
+            views.setTextViewText(R.id.not_connected, "Not Connected")
         }
         
         appWidgetManager.updateAppWidget(appWidgetId, views)

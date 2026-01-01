@@ -26,7 +26,7 @@ import { LocationScreen } from "./screens/LocationScreen";
 import { DrawingScreen } from "./screens/DrawingScreen";
 import { CalendarScreen } from "./screens/CalendarScreen";
 import { startLockScreenUpdates } from "./lib/lockScreenService";
-import { startDistanceWidgetService, stopDistanceWidgetService } from "./lib/widgetDataService";
+import { startDistanceWidgetService, stopDistanceWidgetService, writeWidgetData } from "./lib/widgetDataService";
 // import { startAllWidgets } from "./lib/widgetService"; // Disabled widgets for now
 
 const Stack = createNativeStackNavigator();
@@ -122,6 +122,18 @@ export default function App() {
             // Reset flag if setting is disabled or coupleId is removed
             lockScreenInitialized.current = false;
           }
+
+          // Always write initial widget data (even when not connected) so widget can be added to home screen
+          writeWidgetData({
+            distance: 0,
+            formatted: data.coupleId ? 'Not connected' : 'Not Connected',
+            direction: null,
+            lastUpdate: Date.now(),
+            partnerName: 'Partner',
+            isConnected: Boolean(data.coupleId),
+          }).catch(err => {
+            console.error('Error writing initial widget data:', err);
+          });
 
           // Start distance widget service if enabled
           const isDistanceWidgetEnabled = data.settings?.showDistanceWidget ?? false;
