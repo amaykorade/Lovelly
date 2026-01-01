@@ -12,7 +12,7 @@ WebBrowser.maybeCompleteAuthSession();
 // Project Settings -> Your Apps -> Web App -> OAuth 2.0 Client IDs
 // Use the Web Client ID (not iOS/Android) for Expo
 // You can find this in Firebase Console under Authentication -> Sign-in method -> Google -> Web SDK configuration
-const GOOGLE_WEB_CLIENT_ID = '531044588348-XXXXX.apps.googleusercontent.com'; // TODO: Replace with your actual Web Client ID from Firebase
+const GOOGLE_WEB_CLIENT_ID = '531044588348-vbc519ukv9dr9s6olc029a18n9de9b42.apps.googleusercontent.com';
 
 // Hook version for use in components
 export function useGoogleAuth() {
