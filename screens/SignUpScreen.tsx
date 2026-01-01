@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, Alert, Pressable, ScrollView } from "react-native";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { Ionicons } from "@expo/vector-icons";
 
 import { auth, db } from "../lib/firebase";
+import { signInWithGoogle } from "../lib/googleAuth";
 import Button from "../components/ui/button";
 import { colors, spacing, borderRadius, typography } from "../theme/designSystem";
 import { wp, hp, fontSize } from "../lib/responsive";
@@ -21,6 +23,7 @@ export function SignUpScreen({ navigation }: Props) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleSignUp = async () => {
     // Validation
@@ -95,11 +98,51 @@ export function SignUpScreen({ navigation }: Props) {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    try {
+      setGoogleLoading(true);
+      const userCredential = await signInWithGoogle();
+      const user = userCredential.user;
+
+      // Check if user document exists, if not create it
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (!userSnap.exists()) {
+        // Create user document with Google account info
+        await setDoc(userRef, {
+          name: user.displayName || "User",
+          email: user.email,
+          photoURL: user.photoURL || null,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      } else {
+        // Update existing user document with latest info
+        await setDoc(userRef, {
+          name: user.displayName || userSnap.data()?.name || "User",
+          email: user.email,
+          photoURL: user.photoURL || userSnap.data()?.photoURL || null,
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+      }
+    } catch (error: any) {
+      console.error("Google sign-in error:", error);
+      if (error.message?.includes("cancelled")) {
+        // User cancelled, don't show error
+        return;
+      }
+      Alert.alert("Google Sign-In Error", error.message || "Could not sign in with Google. Please try again.");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <ScrollView
       className="flex-1"
       contentContainerStyle={{ flexGrow: 1 }}
-      style={{ backgroundColor: colors.primary.warmWhite }}
+      style={{ backgroundColor: colors.warmWhite }}
     >
       <View className="flex-1 px-6 py-10">
         {/* Back Button */}
@@ -282,6 +325,48 @@ export function SignUpScreen({ navigation }: Props) {
             {loading ? "Creating account..." : "Sign Up"}
           </Text>
         </Button>
+
+        {/* Divider */}
+        <View className="flex-row items-center gap-4 my-6">
+          <View className="flex-1 h-px" style={{ backgroundColor: colors.secondary.lightGray }} />
+          <Text style={{ color: colors.status.offline, fontSize: fontSize(typography.sizes.small) }}>OR</Text>
+          <View className="flex-1 h-px" style={{ backgroundColor: colors.secondary.lightGray }} />
+        </View>
+
+        {/* Google Sign-In Button */}
+        <Pressable
+          onPress={handleGoogleSignIn}
+          disabled={loading || googleLoading}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: "#FFFFFF",
+            borderWidth: 2,
+            borderColor: colors.secondary.lightGray,
+            borderRadius: wp(borderRadius.md),
+            paddingVertical: hp(spacing.md),
+            paddingHorizontal: wp(spacing.lg),
+            marginBottom: hp(spacing.md),
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+            elevation: 2,
+            opacity: (loading || googleLoading) ? 0.6 : 1,
+          }}
+        >
+          <Ionicons name="logo-google" size={fontSize(20)} color="#4285F4" style={{ marginRight: wp(spacing.sm) }} />
+          <Text
+            style={{
+              fontSize: fontSize(typography.sizes.body),
+              fontWeight: typography.weights.semibold,
+              color: colors.text.primary,
+            }}
+          >
+            {googleLoading ? "Signing up..." : "Continue with Google"}
+          </Text>
+        </Pressable>
 
         {/* Login Link */}
         <View className="flex-row justify-center">
