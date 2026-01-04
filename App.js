@@ -251,6 +251,31 @@ export default function App() {
   }, []);
 
   // Handle deep linking
+  const handleDeepLink = React.useCallback((url) => {
+    if (!url) return;
+    
+    try {
+      const parsed = Linking.parse(url);
+      const { path, queryParams } = parsed;
+      
+      // Handle pairing code deep link: lovelly://join/CODE or https://lovelly.app/join/CODE
+      if (path && path.includes('join')) {
+        const code = queryParams?.code || path.split('/').pop();
+        if (code && navigationRef.current) {
+          // Store code to use when navigation is ready
+          deepLinkCodeRef.current = code.toUpperCase().trim();
+          
+          // Navigate to pairing screen if user is logged in and has profile
+          if (user && hasProfile) {
+            navigationRef.current.navigate('Pairing', { joinCode: deepLinkCodeRef.current });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error handling deep link:', error);
+    }
+  }, [user, hasProfile]);
+
   useEffect(() => {
     // Handle initial URL (when app is opened via deep link)
     Linking.getInitialURL().then((url) => {
@@ -267,7 +292,7 @@ export default function App() {
     return () => {
       subscription.remove();
     };
-  }, [user, hasProfile]);
+  }, [handleDeepLink]);
 
 
   if (error) {
