@@ -61,20 +61,46 @@ export function SignUpScreen({ navigation }: Props) {
       setLoading(true);
 
       // Create user account
+      console.log("Creating Firebase Auth user...");
       const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
       const user = userCredential.user;
+      console.log("Firebase Auth user created:", user.uid);
 
       // Create user document in Firestore
-      await setDoc(doc(db, "users", user.uid), {
-        name: fullName.trim(),
-        email: user.email,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+      console.log("Creating user document in Firestore...");
+      try {
+        await setDoc(doc(db, "users", user.uid), {
+          name: fullName.trim(),
+          email: user.email,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        console.log("User document created successfully in Firestore");
+      } catch (firestoreError: any) {
+        console.error("Error creating user document in Firestore:", firestoreError);
+        console.error("Error code:", firestoreError.code);
+        console.error("Error message:", firestoreError.message);
+        
+        // If Firestore creation fails, still allow auth but show warning
+        if (firestoreError.code === 'permission-denied') {
+          Alert.alert(
+            "Account Created But Profile Error",
+            "Your account was created, but we couldn't save your profile. Please check Firestore rules. You may need to complete your profile setup again."
+          );
+        } else {
+          Alert.alert(
+            "Profile Setup Error",
+            `Account created but profile setup failed: ${firestoreError.message || "Unknown error"}. Please try completing your profile again.`
+          );
+        }
+        // Don't return - let the user continue to profile setup
+      }
 
       // Navigation will be handled by App.js based on auth state
     } catch (error: any) {
-      console.error(error);
+      console.error("Sign up error:", error);
+      console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
 
       if (error.code === "auth/email-already-in-use") {
         Alert.alert(
@@ -89,6 +115,13 @@ export function SignUpScreen({ navigation }: Props) {
       }
       if (error.code === "auth/invalid-email") {
         Alert.alert("Invalid email", "Please enter a valid email address.");
+        return;
+      }
+      if (error.code === "permission-denied") {
+        Alert.alert(
+          "Permission Error",
+          "Unable to create account. Please check Firestore security rules are deployed correctly."
+        );
         return;
       }
 

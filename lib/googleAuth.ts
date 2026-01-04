@@ -43,34 +43,61 @@ export function useGoogleAuth() {
         const user = userCredential.user;
 
         // Check if user document exists, if not create it
+        console.log("Checking/creating user document in Firestore for:", user.uid);
         const userRef = doc(db, 'users', user.uid);
-        const userSnap = await getDoc(userRef);
+        let userSnap;
+        try {
+          userSnap = await getDoc(userRef);
+          console.log("User document exists:", userSnap.exists());
+        } catch (getError: any) {
+          console.error("Error checking user document:", getError);
+          throw new Error(`Failed to check user profile: ${getError.message}`);
+        }
 
         if (!userSnap.exists()) {
           // Create user document with Google profile info
+          console.log("Creating new user document...");
           const displayName = user.displayName || '';
           const nameParts = displayName.split(' ');
           const firstName = nameParts[0] || '';
           const lastName = nameParts.slice(1).join(' ') || '';
 
-          await setDoc(userRef, {
-            name: displayName || 'User',
-            firstName: firstName,
-            lastName: lastName,
-            email: user.email,
-            photoURL: user.photoURL || null,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-            authProvider: 'google',
-          });
+          try {
+            await setDoc(userRef, {
+              name: displayName || 'User',
+              firstName: firstName,
+              lastName: lastName,
+              email: user.email,
+              photoURL: user.photoURL || null,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+              authProvider: 'google',
+            });
+            console.log("User document created successfully");
+          } catch (createError: any) {
+            console.error("Error creating user document:", createError);
+            console.error("Error code:", createError.code);
+            console.error("Error message:", createError.message);
+            if (createError.code === 'permission-denied') {
+              throw new Error("Permission denied. Please check Firestore security rules are deployed correctly.");
+            }
+            throw new Error(`Failed to create user profile: ${createError.message}`);
+          }
         } else {
           // Update existing user document with latest info
-          await setDoc(userRef, {
-            name: user.displayName || userSnap.data().name,
-            email: user.email,
-            photoURL: user.photoURL || userSnap.data().photoURL,
-            updatedAt: serverTimestamp(),
-          }, { merge: true });
+          console.log("Updating existing user document...");
+          try {
+            await setDoc(userRef, {
+              name: user.displayName || userSnap.data().name,
+              email: user.email,
+              photoURL: user.photoURL || userSnap.data().photoURL,
+              updatedAt: serverTimestamp(),
+            }, { merge: true });
+            console.log("User document updated successfully");
+          } catch (updateError: any) {
+            console.error("Error updating user document:", updateError);
+            // Don't throw - this is not critical for sign-in
+          }
         }
 
         return userCredential;
