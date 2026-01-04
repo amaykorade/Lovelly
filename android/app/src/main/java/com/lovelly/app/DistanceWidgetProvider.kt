@@ -12,6 +12,14 @@ class DistanceWidgetProvider : AppWidgetProvider() {
     
     companion object {
         private const val WIDGET_DATA_KEY = "lovelly_widget_data"
+        private const val TAG = "DistanceWidget"
+    }
+    
+    override fun onEnabled(context: Context) {
+        super.onEnabled(context)
+        Log.d(TAG, "Widget enabled - initializing default state")
+        // Initialize widget with default data when first added
+        initializeDefaultWidgetData(context)
     }
     
     override fun onUpdate(
@@ -19,8 +27,35 @@ class DistanceWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
+        Log.d(TAG, "onUpdate called for ${appWidgetIds.size} widget(s)")
         for (appWidgetId in appWidgetIds) {
-            updateWidget(context, appWidgetManager, appWidgetId)
+            try {
+                updateWidget(context, appWidgetManager, appWidgetId)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating widget $appWidgetId", e)
+                e.printStackTrace()
+            }
+        }
+    }
+    
+    private fun initializeDefaultWidgetData(context: Context) {
+        try {
+            val prefs = context.getSharedPreferences(WIDGET_DATA_KEY, Context.MODE_PRIVATE)
+            // Only initialize if no data exists
+            if (!prefs.contains(WIDGET_DATA_KEY)) {
+                val defaultData = JSONObject().apply {
+                    put("distance", 0.0)
+                    put("formatted", "Not Connected")
+                    put("partnerName", "Partner")
+                    put("isConnected", false)
+                    put("lastUpdate", System.currentTimeMillis())
+                }
+                prefs.edit().putString(WIDGET_DATA_KEY, defaultData.toString()).apply()
+                Log.d(TAG, "Default widget data initialized")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error initializing default widget data", e)
+            e.printStackTrace()
         }
     }
     
@@ -42,15 +77,30 @@ class DistanceWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
     ) {
+        Log.d(TAG, "updateWidget called for widget $appWidgetId")
+        
+        // Initialize default data if needed
+        initializeDefaultWidgetData(context)
+        
         // Read from SharedPreferences (written by WidgetUpdateBridge.writeWidgetData)
         val prefs = context.getSharedPreferences(WIDGET_DATA_KEY, Context.MODE_PRIVATE)
         val widgetDataJson = prefs.getString(WIDGET_DATA_KEY, null)
         
-        val views = RemoteViews(context.packageName, R.layout.widget_distance)
+        val views = try {
+            RemoteViews(context.packageName, R.layout.widget_distance)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error creating RemoteViews", e)
+            e.printStackTrace()
+            return
+        }
         
         // Always show the visual representation (two circles and line)
         // This is the core design - always visible
-        views.setViewVisibility(R.id.visual_container, android.view.View.VISIBLE)
+        try {
+            views.setViewVisibility(R.id.visual_container, android.view.View.VISIBLE)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error setting visual_container visibility", e)
+        }
         
         // Always show the widget, even if no data exists
         try {
@@ -61,6 +111,8 @@ class DistanceWidgetProvider : AppWidgetProvider() {
                 val direction = data.optString("direction", null)
                 val partnerName = data.optString("partnerName", "Partner")
                 val isConnected = data.optBoolean("isConnected", false)
+                
+                Log.d(TAG, "Widget data: connected=$isConnected, distance=$distanceKm, formatted=$distance")
                 
                 if (isConnected && distanceKm > 0) {
                     // Connected and has distance - show distance and partner name
@@ -78,23 +130,29 @@ class DistanceWidgetProvider : AppWidgetProvider() {
                 }
             } else {
                 // No data available - show not connected state but keep visual representation
+                Log.d(TAG, "No widget data available, showing default state")
                 views.setTextViewText(R.id.not_connected, "Not Connected")
                 views.setViewVisibility(R.id.distance_text_container, android.view.View.GONE)
                 views.setViewVisibility(R.id.not_connected, android.view.View.VISIBLE)
             }
         } catch (e: Exception) {
-            Log.e("DistanceWidget", "Error parsing widget data", e)
+            Log.e(TAG, "Error parsing widget data", e)
             e.printStackTrace()
             // On error, show not connected state but keep visual representation
-            views.setTextViewText(R.id.not_connected, "Not Connected")
-            views.setViewVisibility(R.id.distance_text_container, android.view.View.GONE)
-            views.setViewVisibility(R.id.not_connected, android.view.View.VISIBLE)
+            try {
+                views.setTextViewText(R.id.not_connected, "Not Connected")
+                views.setViewVisibility(R.id.distance_text_container, android.view.View.GONE)
+                views.setViewVisibility(R.id.not_connected, android.view.View.VISIBLE)
+            } catch (e2: Exception) {
+                Log.e(TAG, "Error setting error state", e2)
+            }
         }
         
         try {
             appWidgetManager.updateAppWidget(appWidgetId, views)
+            Log.d(TAG, "Widget updated successfully")
         } catch (e: Exception) {
-            Log.e("DistanceWidget", "Error updating widget", e)
+            Log.e(TAG, "Error updating widget", e)
             e.printStackTrace()
         }
     }
