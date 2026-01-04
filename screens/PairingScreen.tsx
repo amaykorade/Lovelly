@@ -277,31 +277,46 @@ export function PairingScreen({ navigation, route }: Props) {
       while (attempts < 5) {
         code = generateCode();
         const coupleRef = doc(db, "couples", code);
-        const existing = await getDoc(coupleRef);
-        if (!existing.exists()) {
-          await setDoc(coupleRef, {
-            code,
-            ownerId: user.uid,
-            partnerId: null,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          });
+        try {
+          const existing = await getDoc(coupleRef);
+          if (!existing.exists()) {
+            console.log("Creating couple document with code:", code);
+            await setDoc(coupleRef, {
+              code,
+              ownerId: user.uid,
+              partnerId: null,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            });
+            console.log("Couple document created successfully:", code);
 
-          // Mark this user as part of this couple (owner)
-          const userRef = doc(db, "users", user.uid);
-          await updateDoc(userRef, {
-            coupleId: code,
-            updatedAt: serverTimestamp(),
-          });
+            // Mark this user as part of this couple (owner)
+            const userRef = doc(db, "users", user.uid);
+            await updateDoc(userRef, {
+              coupleId: code,
+              updatedAt: serverTimestamp(),
+            });
+            console.log("User document updated with coupleId:", code);
 
-          setMyCode(code);
-          setCoupleId(code);
-          // Set expiration to 24 hours from now
-          const expiresAt = new Date();
-          expiresAt.setHours(expiresAt.getHours() + 24);
-          setCodeExpiresAt(expiresAt);
-          // Don't change view - stay on selection screen to show both options
-          return;
+            setMyCode(code);
+            setCoupleId(code);
+            // Set expiration to 24 hours from now
+            const expiresAt = new Date();
+            expiresAt.setHours(expiresAt.getHours() + 24);
+            setCodeExpiresAt(expiresAt);
+            // Don't change view - stay on selection screen to show both options
+            return;
+          } else {
+            console.log("Code already exists, trying another:", code);
+          }
+        } catch (createError: any) {
+          console.error("Error creating couple document:", createError);
+          if (createError.code === 'permission-denied') {
+            Alert.alert("Permission Error", "Unable to create code. Please check Firestore rules.");
+            setCreatingCode(false);
+            return;
+          }
+          // Continue to next attempt
         }
         attempts += 1;
       }
@@ -311,8 +326,16 @@ export function PairingScreen({ navigation, route }: Props) {
         "We couldn’t generate a unique code. Please try again."
       );
     } catch (error: any) {
-      console.error(error);
-      Alert.alert("Error", error.message || "Could not create pairing code.");
+      console.error("Error creating code:", error);
+      console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
+      let errorMessage = "Could not create pairing code.";
+      if (error.code === 'permission-denied') {
+        errorMessage = "Permission denied. Please check Firestore rules are deployed correctly.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      Alert.alert("Error", errorMessage);
     } finally {
       setCreatingCode(false);
     }
@@ -391,12 +414,30 @@ export function PairingScreen({ navigation, route }: Props) {
       });
 
       const coupleRef = doc(db, "couples", trimmed);
-      const snap = await Promise.race([
-        getDoc(coupleRef),
-        timeoutPromise
-      ]) as any;
+      console.log("Looking for couple with code:", trimmed);
+      let snap;
+      try {
+        snap = await Promise.race([
+          getDoc(coupleRef),
+          timeoutPromise
+        ]) as any;
+        console.log("Couple document lookup result:", snap.exists() ? "found" : "not found");
+        if (snap.exists()) {
+          console.log("Couple data:", snap.data());
+        }
+      } catch (lookupError: any) {
+        console.error("Error looking up couple:", lookupError);
+        if (lookupError.code === 'permission-denied') {
+          Alert.alert("Permission Error", "Unable to read couple code. Please check Firestore rules.");
+        } else {
+          Alert.alert("Connection Error", lookupError.message || "Could not connect. Please try again.");
+        }
+        setJoining(false);
+        return;
+      }
 
       if (!snap.exists()) {
+        console.log("Couple document does not exist for code:", trimmed);
         Alert.alert("Invalid code", "We couldn't find a couple with that code. Check with your partner.");
         setJoining(false);
         return;
