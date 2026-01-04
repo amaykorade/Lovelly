@@ -12,18 +12,22 @@ service cloud.firestore {
     
     // Couples collection - users can read/write if they're part of the couple
     match /couples/{coupleId} {
-      // Allow read if user is authenticated and is the owner or partner
-      allow read: if request.auth != null && 
-        (resource.data.ownerId == request.auth.uid || 
-         resource.data.partnerId == request.auth.uid);
+      // Allow read if user is authenticated (needed to check if code exists when joining)
+      allow read: if request.auth != null;
       
-      // Allow create if user is authenticated
-      allow create: if request.auth != null;
+      // Allow create if user is authenticated and sets themselves as owner
+      allow create: if request.auth != null && 
+        request.resource.data.ownerId == request.auth.uid;
       
-      // Allow update if user is authenticated and is the owner or partner
+      // Allow update if:
+      // 1. User is already the owner or partner, OR
+      // 2. User is trying to join (setting themselves as partnerId when partnerId is currently null)
       allow update: if request.auth != null && 
-        (resource.data.ownerId == request.auth.uid || 
-         resource.data.partnerId == request.auth.uid);
+        ((resource.data.ownerId == request.auth.uid || 
+          resource.data.partnerId == request.auth.uid) ||
+         // Allow joining: user sets themselves as partner when partnerId is null
+         (request.resource.data.partnerId == request.auth.uid && 
+          resource.data.partnerId == null));
       
       // Allow delete if user is authenticated and is the owner
       allow delete: if request.auth != null && 
